@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     debug: bool = False
 
+    database_url: str = "mysql+aiomysql://root@127.0.0.1:3306/taskhub"
+    db_echo: bool = False
+
 
 @lru_cache
 def get_settings() -> Settings:

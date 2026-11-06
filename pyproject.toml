@@ -23,7 +23,8 @@ dev = [
 [tool.ruff]
 line-length = 88
 target-version = "py311"
-src = ["app"]
+src = ["app", "alembic"]
+exclude = ["alembic/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

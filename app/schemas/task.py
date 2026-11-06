@@ -18,6 +18,9 @@ class TaskSchema(BaseModel):
 
 
 class TaskCreate(TaskSchema):
+    project_id: int
+    created_by: int
+    assignee_id: int | None = None
     title: str = Field(..., min_length=TITLE_MIN_LENGTH, max_length=TITLE_MAX_LENGTH)
     description: str | None = Field(default=None, max_length=DESCRIPTION_MAX_LENGTH)
     status: TaskStatus = TaskStatus.TODO
@@ -62,6 +65,9 @@ class TaskResponse(TaskSchema):
     model_config = ConfigDict(str_strip_whitespace=True, from_attributes=True)
 
     id: int
+    project_id: int
+    created_by: int
+    assignee_id: int | None
     title: str
     description: str | None
     status: TaskStatus

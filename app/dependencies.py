@@ -1,13 +1,17 @@
 from typing import Annotated
 
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.repositories.task import TaskRepository, task_repository
+from app.db.session import get_session
+from app.repositories.task import TaskRepository
 from app.services.task import TaskService
 
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
-def get_task_repository() -> TaskRepository:
-    return task_repository
+
+def get_task_repository(session: SessionDep) -> TaskRepository:
+    return TaskRepository(session)
 
 
 def get_task_service(

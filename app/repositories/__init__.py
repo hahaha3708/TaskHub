@@ -1,3 +1,4 @@
-from app.repositories.task import TaskRepository, task_repository
+from app.repositories.base import BaseRepository
+from app.repositories.task import TaskRepository
 
-__all__ = ["TaskRepository", "task_repository"]
+__all__ = ["BaseRepository", "TaskRepository"]

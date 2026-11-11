@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.core.exceptions import (
     ConflictException,
     ForbiddenException,
+    InactiveUserException,
     InvalidTokenException,
     UnauthorizedException,
 )
@@ -80,9 +81,12 @@ class AuthService:
             raise InvalidTokenException(messages.REFRESH_TOKEN_REUSED)
 
         user = await self.user_repo.get(user_id)
-        if user is None or not user.is_active:
+        if user is None:
             await self.session.commit()
             raise InvalidTokenException()
+        if not user.is_active:
+            await self.session.commit()
+            raise InactiveUserException()
 
         return await self._issue_tokens(user.id)
 
@@ -107,7 +111,7 @@ class AuthService:
     async def _issue_tokens(self, user_id: int) -> TokenResponse:
         access_token, _ = create_access_token(user_id)
         refresh_token, jti = create_refresh_token(user_id)
-        expires_at = datetime.now(timezone.utc) + timedelta(
+        expires_at = datetime.now(UTC) + timedelta(
             days=settings.refresh_token_expire_days
         )
         await self.refresh_repo.create(jti=jti, user_id=user_id, expires_at=expires_at)

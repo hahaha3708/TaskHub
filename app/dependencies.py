@@ -24,6 +24,7 @@ DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 # --- Auth dependencies -------------------------------------------------
 
+
 def _extract_bearer_token(authorization: str | None) -> str:
     if not authorization or not authorization.lower().startswith("bearer "):
         raise InvalidTokenException()
@@ -62,6 +63,7 @@ AdminUser = Annotated[User, Depends(require_admin)]
 
 
 # --- Service factories ------------------------------------------------
+
 
 def get_task_repository(session: DbSession) -> TaskRepository:
     return TaskRepository(session)

@@ -8,7 +8,7 @@
   như access token.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
@@ -38,7 +38,7 @@ def _create_token(
     user_id: int, token_type: TokenType, expires_delta: timedelta
 ) -> tuple[str, str]:
     """Tạo JWT. Trả về ``(token, jti)``."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     jti = str(uuid4())
     payload: dict[str, Any] = {
         "sub": str(user_id),

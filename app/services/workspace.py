@@ -21,7 +21,9 @@ class WorkspaceService:
         self.session = session
         self.workspace_repo = WorkspaceRepository(session)
 
-    async def create_workspace(self, owner_id: int, payload: WorkspaceCreate) -> Workspace:
+    async def create_workspace(
+        self, owner_id: int, payload: WorkspaceCreate
+    ) -> Workspace:
         workspace = Workspace(name=payload.name, owner_id=owner_id)
         self.session.add(workspace)
         await self.session.flush()

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,9 +40,7 @@ class RefreshTokenRepository:
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
 
-    async def atomic_revoke_unrevoked(
-        self, jti: str
-    ) -> RefreshToken | None:
+    async def atomic_revoke_unrevoked(self, jti: str) -> RefreshToken | None:
         """Revoke token một cách atomic.
 
         Dùng ``UPDATE ... WHERE revoked = false RETURNING`` để chỉ có một
@@ -77,4 +75,4 @@ class RefreshTokenRepository:
         return result.rowcount or 0
 
     async def is_expired(self, token: RefreshToken) -> bool:
-        return token.expires_at < datetime.now(timezone.utc)
+        return token.expires_at < datetime.now(UTC)

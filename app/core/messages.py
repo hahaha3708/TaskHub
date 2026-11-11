@@ -26,6 +26,9 @@ WORKSPACE_OWNER_ONLY = "only the workspace owner can perform this action"
 WORKSPACE_MEMBER_ALREADY_EXISTS = "user is already a member of this workspace"
 WORKSPACE_MEMBER_NOT_FOUND = "workspace member not found"
 CANNOT_REMOVE_WORKSPACE_OWNER = "cannot remove the workspace owner"
+CANNOT_ASSIGN_WORKSPACE_OWNER = "workspace owner role cannot be assigned to a member"
+WORKSPACE_OWNER_ROLE_IMMUTABLE = "workspace owner's role cannot be changed"
+WORKSPACE_USER_NOT_FOUND = "active user not found"
 
 # --- Generic
 NOT_FOUND = "resource not found"

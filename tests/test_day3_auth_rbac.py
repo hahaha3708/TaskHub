@@ -171,6 +171,151 @@ async def test_member_cannot_change_or_delete_another_users_workspace(
 
 
 @pytest.mark.asyncio
+async def test_workspace_listing_membership_and_role_management(
+    client: AsyncClient,
+) -> None:
+    owner = await register(client, "workspace-owner@example.com")
+    member = await register(client, "workspace-member@example.com")
+    owner_tokens = await login(client, "workspace-owner@example.com")
+    member_tokens = await login(client, "workspace-member@example.com")
+    owner_headers = {"Authorization": f"Bearer {owner_tokens['access_token']}"}
+    member_headers = {"Authorization": f"Bearer {member_tokens['access_token']}"}
+
+    created = await client.post(
+        "/api/v1/workspaces/", headers=owner_headers, json={"name": "Planning"}
+    )
+    workspace_id = created.json()["id"]
+    owner_workspaces = await client.get("/api/v1/workspaces/", headers=owner_headers)
+    member_workspaces = await client.get("/api/v1/workspaces/", headers=member_headers)
+    assert len(owner_workspaces.json()) == 1
+    assert member_workspaces.json() == []
+
+    invited = await client.post(
+        f"/api/v1/workspaces/{workspace_id}/members",
+        headers=owner_headers,
+        json={"user_id": member["id"], "role": "VIEWER"},
+    )
+    assert invited.status_code == 201
+    assert invited.json()["role"] == "VIEWER"
+    member_workspaces = await client.get("/api/v1/workspaces/", headers=member_headers)
+    assert len(member_workspaces.json()) == 1
+
+    members = await client.get(
+        f"/api/v1/workspaces/{workspace_id}/members", headers=member_headers
+    )
+    assert members.status_code == 200
+    assert {item["user_id"] for item in members.json()} == {owner["id"], member["id"]}
+
+    member_workspace_update = await client.patch(
+        f"/api/v1/workspaces/{workspace_id}",
+        headers=member_headers,
+        json={"name": "Not allowed"},
+    )
+    member_role_update = await client.patch(
+        f"/api/v1/workspaces/{workspace_id}/members/{member['id']}",
+        headers=member_headers,
+        json={"role": "EDITOR"},
+    )
+    member_removal = await client.delete(
+        f"/api/v1/workspaces/{workspace_id}/members/{member['id']}",
+        headers=member_headers,
+    )
+    assert member_workspace_update.status_code == 403
+    assert member_role_update.status_code == 403
+    assert member_removal.status_code == 403
+
+    changed = await client.patch(
+        f"/api/v1/workspaces/{workspace_id}/members/{member['id']}",
+        headers=owner_headers,
+        json={"role": "EDITOR"},
+    )
+    assert changed.status_code == 200
+    assert changed.json()["role"] == "EDITOR"
+
+    attempted_owner = await client.patch(
+        f"/api/v1/workspaces/{workspace_id}/members/{member['id']}",
+        headers=owner_headers,
+        json={"role": "OWNER"},
+    )
+    assert attempted_owner.status_code == 422
+
+    removed = await client.delete(
+        f"/api/v1/workspaces/{workspace_id}/members/{member['id']}",
+        headers=owner_headers,
+    )
+    assert removed.status_code == 204
+    member_workspaces = await client.get("/api/v1/workspaces/", headers=member_headers)
+    assert member_workspaces.json() == []
+
+
+@pytest.mark.asyncio
+async def test_workspace_invitation_rejects_missing_and_duplicate_users(
+    client: AsyncClient,
+) -> None:
+    await register(client, "invite-owner@example.com")
+    member = await register(client, "invite-member@example.com")
+    owner_tokens = await login(client, "invite-owner@example.com")
+    headers = {"Authorization": f"Bearer {owner_tokens['access_token']}"}
+    created = await client.post(
+        "/api/v1/workspaces/", headers=headers, json={"name": "Invites"}
+    )
+    workspace_id = created.json()["id"]
+
+    first = await client.post(
+        f"/api/v1/workspaces/{workspace_id}/members",
+        headers=headers,
+        json={"user_id": member["id"]},
+    )
+    duplicate = await client.post(
+        f"/api/v1/workspaces/{workspace_id}/members",
+        headers=headers,
+        json={"user_id": member["id"]},
+    )
+    missing = await client.post(
+        f"/api/v1/workspaces/{workspace_id}/members",
+        headers=headers,
+        json={"user_id": 99999},
+    )
+    owner_role = await client.post(
+        f"/api/v1/workspaces/{workspace_id}/members",
+        headers=headers,
+        json={"user_id": member["id"], "role": "OWNER"},
+    )
+
+    assert first.status_code == 201
+    assert duplicate.status_code == 409
+    assert missing.status_code == 404
+    assert owner_role.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_workspace_owner_can_update_and_delete_workspace(
+    client: AsyncClient,
+) -> None:
+    await register(client, "workspace-crud@example.com")
+    tokens = await login(client, "workspace-crud@example.com")
+    headers = {"Authorization": f"Bearer {tokens['access_token']}"}
+    created = await client.post(
+        "/api/v1/workspaces/", headers=headers, json={"name": "Before"}
+    )
+    workspace_id = created.json()["id"]
+
+    updated = await client.patch(
+        f"/api/v1/workspaces/{workspace_id}",
+        headers=headers,
+        json={"name": "After"},
+    )
+    deleted = await client.delete(f"/api/v1/workspaces/{workspace_id}", headers=headers)
+
+    assert updated.status_code == 200
+    assert updated.json()["name"] == "After"
+    assert deleted.status_code == 204
+    assert (
+        await client.get(f"/api/v1/workspaces/{workspace_id}", headers=headers)
+    ).status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_password_change_rejects_old_password(client: AsyncClient) -> None:
     await register(client, "password-change@example.com")
     tokens = await login(client, "password-change@example.com")

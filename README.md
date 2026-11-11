@@ -32,3 +32,11 @@ uvicorn app.main:app --reload
 | DELETE | `/api/v1/tasks/{task_id}` | Delete a task |
 
 Required fields such as `title`, `status`, and `priority` reject JSON `null` on PATCH. `description` and `due_date` may be cleared with `null`.
+
+## Day 3 authentication and authorization
+
+- `POST /api/v1/auth/register`, `/login`, `/refresh`, `/logout`, `/change-password`
+- `GET/PATCH /api/v1/users/me`; user administration is restricted to active admins.
+- Workspace changes are restricted to the owner; task reads and writes require membership, with writes limited to owners and editors.
+- Access and refresh JWTs use distinct token types. Refresh tokens rotate atomically and are revoked after password changes.
+- Interactive API docs: http://127.0.0.1:8000/docs

@@ -26,3 +26,15 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate]):
         )
         result = await self.session.execute(statement)
         return len(list(result.scalars().all()))
+
+    async def lock_active_admins(self) -> list[User]:
+        """Lock active admin rows while checking last-admin safeguards."""
+        from app.models.enums import UserRole
+
+        statement = (
+            select(User)
+            .where(User.role == UserRole.ADMIN, User.is_active.is_(True))
+            .with_for_update()
+        )
+        result = await self.session.execute(statement)
+        return list(result.scalars().all())

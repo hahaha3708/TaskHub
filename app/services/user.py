@@ -39,20 +39,16 @@ class UserService:
 
         # Nếu admin đang hạ quyền chính mình thành MEMBER, phải đảm bảo
         # còn ít nhất 1 admin active khác.
-        is_self_demote = (
-            admin_id == target_id
-            and payload.role == UserRole.MEMBER
-            and target.role == UserRole.ADMIN
-        )
         # Nếu admin đang vô hiệu hoá / xoá quyền admin của mình:
-        is_self_losing_admin = admin_id == target_id and (
-            payload.role == UserRole.MEMBER
-            or payload.is_active is False
+        loses_admin_status = (
+            target.role == UserRole.ADMIN
+            and target.is_active
+            and (payload.role == UserRole.MEMBER or payload.is_active is False)
         )
-        if is_self_losing_admin:
-            active_admins = await self.user_repo.count_active_admins()
+        if loses_admin_status:
+            active_admins = await self.user_repo.lock_active_admins()
             # Nếu chính mình là admin duy nhất active thì không cho.
-            remaining_admins = active_admins - 1
+            remaining_admins = len(active_admins) - int(target in active_admins)
             if remaining_admins < 1:
                 raise ForbiddenException(messages.CANNOT_DEMOTE_LAST_ADMIN)
 
@@ -69,7 +65,7 @@ class UserService:
         target = await self.get_user(target_id)
         # Không cho xoá admin active cuối cùng.
         if target.role == UserRole.ADMIN and target.is_active:
-            active_admins = await self.user_repo.count_active_admins()
-            if active_admins <= 1:
+            active_admins = await self.user_repo.lock_active_admins()
+            if len(active_admins) <= 1:
                 raise ForbiddenException(messages.CANNOT_DEMOTE_LAST_ADMIN)
         await self.user_repo.delete(target)

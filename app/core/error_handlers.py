@@ -2,9 +2,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
+from app.core import messages
 from app.core.exceptions import AppException
 from app.core.logging import get_logger
-from app.core import messages
 
 logger = get_logger()
 
@@ -33,11 +33,9 @@ def register_exception_handlers(app: FastAPI) -> None:
         msg = str(exc.orig).lower() if exc.orig else ""
         if "users" in msg and "email" in msg:
             detail = messages.EMAIL_ALREADY_REGISTERED
-            code = 409
         else:
-            detail = messages.FORBIDDEN
-            code = 409
+            detail = messages.DATA_CONFLICT
         return JSONResponse(
-            status_code=code,
+            status_code=409,
             content={"detail": detail},
         )

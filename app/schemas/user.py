@@ -9,6 +9,7 @@ from app.core.constants import (
     PASSWORD_MAX_BYTES,
     PASSWORD_MIN_LENGTH,
 )
+from app.core.messages import REQUIRED_FIELD_CANNOT_BE_NULL
 from app.models.enums import UserRole
 from app.schemas.base import BaseResponseSchema, BaseSchema
 
@@ -51,6 +52,13 @@ class UserUpdate(BaseSchema):
         max_length=FULL_NAME_MAX_LENGTH,
     )
 
+    @field_validator("email", "full_name", mode="before")
+    @classmethod
+    def reject_null_for_non_nullable_fields(cls, value: object) -> object:
+        if value is None:
+            raise ValueError(REQUIRED_FIELD_CANNOT_BE_NULL)
+        return value
+
 
 class UserAdminUpdate(BaseSchema):
     """Admin cập nhật user khác (email, full_name, role, is_active)."""
@@ -63,6 +71,13 @@ class UserAdminUpdate(BaseSchema):
     )
     role: UserRole | None = None
     is_active: bool | None = None
+
+    @field_validator("email", "full_name", "role", "is_active", mode="before")
+    @classmethod
+    def reject_null_for_non_nullable_fields(cls, value: object) -> object:
+        if value is None:
+            raise ValueError(REQUIRED_FIELD_CANNOT_BE_NULL)
+        return value
 
 
 class UserResponse(BaseResponseSchema):

@@ -15,7 +15,7 @@ PASSWORD_MAX_BYTES = 72
 
 # --- JWT
 JWT_ALGORITHM = "HS256"
-# Cho phép các thuật toán khi verify (chỉ một trong settings, liệt kê ra đây để tránh magic string).
+# Giới hạn thuật toán xác minh theo cấu hình, không nhận thuật toán từ token.
 JWT_ALGORITHMS = [JWT_ALGORITHM]
 
 # --- Field length constraints (đồng bộ với DB columns)

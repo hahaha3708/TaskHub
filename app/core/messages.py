@@ -9,6 +9,8 @@ REFRESH_TOKEN_REVOKED = "refresh token has been revoked"
 REFRESH_TOKEN_REUSED = "refresh token reuse detected, all sessions revoked"
 INACTIVE_USER = "inactive user"
 EMAIL_ALREADY_REGISTERED = "email already registered"
+REQUIRED_FIELD_CANNOT_BE_NULL = "required field cannot be null"
+DATA_CONFLICT = "request conflicts with existing data"
 
 # --- User
 USER_NOT_FOUND = "user not found"

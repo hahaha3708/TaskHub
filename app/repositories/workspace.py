@@ -1,6 +1,7 @@
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.enums import WorkspaceRole
 from app.models.workspace import Workspace, WorkspaceMember
 from app.repositories.base import BaseRepository
 from app.schemas.workspace import WorkspaceCreate, WorkspaceUpdate
@@ -32,12 +33,40 @@ class WorkspaceRepository(BaseRepository[Workspace, WorkspaceCreate, WorkspaceUp
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
 
+    async def list_for_user(self, user_id: int) -> list[Workspace]:
+        statement = (
+            select(Workspace)
+            .outerjoin(
+                WorkspaceMember,
+                WorkspaceMember.workspace_id == Workspace.id,
+            )
+            .where(
+                or_(
+                    Workspace.owner_id == user_id,
+                    WorkspaceMember.user_id == user_id,
+                )
+            )
+            .distinct()
+            .order_by(Workspace.id)
+        )
+        result = await self.session.execute(statement)
+        return list(result.scalars().all())
+
+    async def list_members(self, workspace_id: int) -> list[WorkspaceMember]:
+        statement = (
+            select(WorkspaceMember)
+            .where(WorkspaceMember.workspace_id == workspace_id)
+            .order_by(WorkspaceMember.user_id)
+        )
+        result = await self.session.execute(statement)
+        return list(result.scalars().all())
+
     async def add_member(
         self,
         *,
         workspace_id: int,
         user_id: int,
-        role,
+        role: WorkspaceRole,
     ) -> WorkspaceMember:
         member = WorkspaceMember(
             workspace_id=workspace_id,
@@ -45,6 +74,14 @@ class WorkspaceRepository(BaseRepository[Workspace, WorkspaceCreate, WorkspaceUp
             role=role,
         )
         self.session.add(member)
+        return member
+
+    async def update_member_role(
+        self, member: WorkspaceMember, role: WorkspaceRole
+    ) -> WorkspaceMember:
+        member.role = role
+        await self.session.commit()
+        await self.session.refresh(member)
         return member
 
     async def remove_member(self, workspace_id: int, user_id: int) -> int:

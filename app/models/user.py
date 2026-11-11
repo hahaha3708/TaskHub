@@ -8,6 +8,7 @@ from app.models.enums import UserRole
 
 if TYPE_CHECKING:
     from app.models.comment import Comment
+    from app.models.refresh_token import RefreshToken
     from app.models.task import Task
     from app.models.workspace import Workspace, WorkspaceMember
 
@@ -50,3 +51,7 @@ class User(TimestampMixin, Base):
         back_populates="creator",
     )
     comments: Mapped[list["Comment"]] = relationship(back_populates="author")
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )

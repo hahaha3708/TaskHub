@@ -6,11 +6,20 @@ from app.schemas.workspace import (
     WorkspaceCreate,
     WorkspaceMemberCreate,
     WorkspaceMemberResponse,
+    WorkspaceMemberUpdate,
     WorkspaceResponse,
     WorkspaceUpdate,
 )
 
 router = APIRouter()
+
+
+@router.get("/", response_model=list[WorkspaceResponse])
+async def list_workspaces(
+    current_user: CurrentUser,
+    service: WorkspaceServiceDep,
+) -> list[Workspace]:
+    return await service.list_workspaces(current_user.id)
 
 
 @router.post("/", response_model=WorkspaceResponse, status_code=status.HTTP_201_CREATED)
@@ -62,6 +71,37 @@ async def add_member(
     service: WorkspaceServiceDep,
 ) -> WorkspaceMember:
     return await service.add_member(workspace_id, current_user.id, payload)
+
+
+@router.get(
+    "/{workspace_id}/members",
+    response_model=list[WorkspaceMemberResponse],
+)
+async def list_members(
+    workspace_id: int,
+    current_user: CurrentUser,
+    service: WorkspaceServiceDep,
+) -> list[WorkspaceMember]:
+    return await service.list_members(workspace_id, current_user.id)
+
+
+@router.patch(
+    "/{workspace_id}/members/{user_id}",
+    response_model=WorkspaceMemberResponse,
+)
+async def update_member_role(
+    workspace_id: int,
+    user_id: int,
+    payload: WorkspaceMemberUpdate,
+    current_user: CurrentUser,
+    service: WorkspaceServiceDep,
+) -> WorkspaceMember:
+    return await service.update_member_role(
+        workspace_id,
+        current_user.id,
+        user_id,
+        payload,
+    )
 
 
 @router.delete(

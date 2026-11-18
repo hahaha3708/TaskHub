@@ -7,6 +7,7 @@ from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.error_handlers import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
+from app.db.session import engine
 
 logger = get_logger()
 
@@ -16,6 +17,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging()
     logger.info("Starting %s v%s", settings.app_name, settings.app_version)
     yield
+    await engine.dispose()
     logger.info("Shutting down %s", settings.app_name)
 
 

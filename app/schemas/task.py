@@ -1,5 +1,4 @@
 from datetime import datetime
-from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -11,20 +10,7 @@ from app.core.constants import (
     TITLE_MAX_LENGTH,
     TITLE_MIN_LENGTH,
 )
-
-
-class TaskStatus(StrEnum):
-    TODO = "TODO"
-    IN_PROGRESS = "IN_PROGRESS"
-    IN_REVIEW = "IN_REVIEW"
-    DONE = "DONE"
-
-
-class TaskPriority(StrEnum):
-    LOW = "LOW"
-    MEDIUM = "MEDIUM"
-    HIGH = "HIGH"
-    URGENT = "URGENT"
+from app.models.enums import TaskPriority, TaskStatus
 
 
 class TaskSchema(BaseModel):
@@ -32,6 +18,8 @@ class TaskSchema(BaseModel):
 
 
 class TaskCreate(TaskSchema):
+    project_id: int
+    assignee_id: int | None = None
     title: str = Field(..., min_length=TITLE_MIN_LENGTH, max_length=TITLE_MAX_LENGTH)
     description: str | None = Field(default=None, max_length=DESCRIPTION_MAX_LENGTH)
     status: TaskStatus = TaskStatus.TODO
@@ -76,6 +64,9 @@ class TaskResponse(TaskSchema):
     model_config = ConfigDict(str_strip_whitespace=True, from_attributes=True)
 
     id: int
+    project_id: int
+    created_by: int
+    assignee_id: int | None
     title: str
     description: str | None
     status: TaskStatus

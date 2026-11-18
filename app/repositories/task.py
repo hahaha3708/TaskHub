@@ -1,56 +1,38 @@
-from datetime import UTC, datetime
-from threading import Lock
+from sqlalchemy import or_, select
 
+from app.models.project import Project
 from app.models.task import Task
+from app.models.workspace import Workspace, WorkspaceMember
+from app.repositories.base import BaseRepository
 from app.schemas.task import TaskCreate, TaskUpdate
 
 
-class TaskRepository:
-    def __init__(self) -> None:
-        self._tasks: dict[int, Task] = {}
-        self._next_id = 1
-        self._lock = Lock()
+class TaskRepository(BaseRepository[Task, TaskCreate, TaskUpdate]):
+    model = Task
 
-    def list(self) -> list[Task]:
-        with self._lock:
-            return list(self._tasks.values())
-
-    def get(self, task_id: int) -> Task | None:
-        with self._lock:
-            return self._tasks.get(task_id)
-
-    def add(self, payload: TaskCreate) -> Task:
-        with self._lock:
-            task = Task(
-                id=self._next_id,
-                title=payload.title,
-                description=payload.description,
-                status=payload.status,
-                priority=payload.priority,
-                due_date=payload.due_date,
-                created_at=datetime.now(UTC),
+    async def list_visible_to(self, user_id: int) -> list[Task]:
+        statement = (
+            select(Task)
+            .join(Project, Task.project_id == Project.id)
+            .join(Workspace, Project.workspace_id == Workspace.id)
+            .outerjoin(
+                WorkspaceMember,
+                WorkspaceMember.workspace_id == Workspace.id,
             )
-            self._tasks[task.id] = task
-            self._next_id += 1
-            return task
+            .where(
+                or_(
+                    Workspace.owner_id == user_id,
+                    WorkspaceMember.user_id == user_id,
+                )
+            )
+            .distinct()
+        )
+        result = await self.session.execute(statement)
+        return list(result.scalars().all())
 
-    def update(self, task_id: int, payload: TaskUpdate) -> Task | None:
-        with self._lock:
-            current = self._tasks.get(task_id)
-            if current is None:
-                return None
-
-            changes = payload.model_dump(exclude_unset=True)
-            for field, value in changes.items():
-                setattr(current, field, value)
-            return current
-
-    def remove(self, task_id: int) -> bool:
-        with self._lock:
-            if task_id not in self._tasks:
-                return False
-            del self._tasks[task_id]
-            return True
-
-
-task_repository = TaskRepository()
+    async def create_for_user(self, payload: TaskCreate, user_id: int) -> Task:
+        task = Task(**payload.model_dump(), created_by=user_id)
+        self.session.add(task)
+        await self.session.commit()
+        await self.session.refresh(task)
+        return task

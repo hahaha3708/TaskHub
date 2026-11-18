@@ -74,3 +74,10 @@ class ConflictException(AppException):
 
     def __init__(self, message: str) -> None:
         super().__init__(message)
+
+
+class UnprocessableEntityException(AppException):
+    status_code = 422
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)

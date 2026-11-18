@@ -39,8 +39,10 @@ class Project(TimestampMixin, Base):
     tasks: Mapped[list["Task"]] = relationship(
         back_populates="project",
         cascade="all, delete-orphan",
+        passive_deletes=True,
     )
     labels: Mapped[list["Label"]] = relationship(
         back_populates="project",
         cascade="all, delete-orphan",
+        passive_deletes=True,
     )

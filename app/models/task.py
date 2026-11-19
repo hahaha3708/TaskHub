@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, Text
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 class Task(TimestampMixin, Base):
     __tablename__ = "tasks"
+    __table_args__ = (Index("ix_tasks_project_id_status", "project_id", "status"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     project_id: Mapped[int] = mapped_column(
@@ -75,8 +76,10 @@ class Task(TimestampMixin, Base):
     labels: Mapped[list["Label"]] = relationship(
         secondary=task_labels,
         back_populates="tasks",
+        passive_deletes=True,
     )
     comments: Mapped[list["Comment"]] = relationship(
         back_populates="task",
         cascade="all, delete-orphan",
+        passive_deletes=True,
     )

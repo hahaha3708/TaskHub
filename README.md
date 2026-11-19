@@ -34,6 +34,7 @@ uvicorn app.main:app --reload
 Required fields such as `title`, `status`, and `priority` reject JSON `null` on PATCH. `description` and `due_date` may be cleared with `null`.
 
 ## Day 3 authentication and authorization
+## Day 4 is in this branch
 
 - `POST /api/v1/auth/register`, `/login`, `/refresh`, `/logout`, `/change-password`
 - `GET/PATCH /api/v1/users/me`; user administration is restricted to active admins.
